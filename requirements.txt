@@ -1,0 +1,11 @@
+email_validator
+fuzzywuzzy
+numpy
+pandas
+plotly
+sqlalchemy
+streamlit
+tensorflow
+textdistance
+Pillow
+dnspython
