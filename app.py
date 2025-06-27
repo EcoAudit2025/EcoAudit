@@ -25,7 +25,141 @@ st.set_page_config(
     }
 )
 
+# Add Botpress chatbot integration with floating button
+st.components.v1.html("""
+<script src="https://cdn.botpress.cloud/webchat/v3.0/inject.js"></script>
+<script src="https://files.bpcontent.cloud/2025/06/27/14/20250627143319-XXC1AHIR.js"></script>
 
+<style>
+    .chatbot-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        border-radius: 50%;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        cursor: pointer;
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        transition: all 0.3s ease;
+        user-select: none;
+    }
+    
+    .chatbot-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+        background: linear-gradient(135deg, #45a049, #4CAF50);
+    }
+    
+    .chatbot-button:active {
+        transform: scale(0.95);
+    }
+    
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+        }
+    }
+    
+    /* Ensure the Botpress webchat widget is properly styled */
+    .bp-web-widget {
+        z-index: 999998 !important;
+    }
+    
+    .bp-web-widget iframe {
+        z-index: 999998 !important;
+    }
+</style>
+
+<div id="chatbot-container">
+    <div class="chatbot-button pulse" id="chatbot-toggle" title="Chat with EcoBot Assistant">
+        🤖
+    </div>
+</div>
+
+<script>
+let chatbotInitialized = false;
+let retryCount = 0;
+const maxRetries = 10;
+
+function initializeChatbot() {
+    if (window.botpressWebChat && !chatbotInitialized) {
+        try {
+            // Initialize the webchat
+            window.botpressWebChat.init({
+                composerPlaceholder: "Ask me about environmental tips and EcoAudit features...",
+                botConversationDescription: "Your AI assistant for environmental guidance", 
+                botName: "EcoBot Assistant",
+                enableTranscriptDownload: false,
+                enableConversationDeletion: true,
+                hideWidget: true, // Hide default widget
+            });
+            
+            chatbotInitialized = true;
+            
+            // Add click event to our custom button
+            const button = document.getElementById('chatbot-toggle');
+            if (button) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (window.botpressWebChat) {
+                        window.botpressWebChat.toggle();
+                    }
+                });
+                
+                // Add hover effects
+                button.addEventListener('mouseenter', function() {
+                    this.classList.remove('pulse');
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.classList.add('pulse');
+                });
+            }
+            
+            console.log('Chatbot initialized successfully');
+        } catch (error) {
+            console.error('Error initializing chatbot:', error);
+        }
+    } else if (!window.botpressWebChat && retryCount < maxRetries) {
+        retryCount++;
+        setTimeout(initializeChatbot, 1000);
+    }
+}
+
+// Start initialization when scripts load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeChatbot);
+} else {
+    initializeChatbot();
+}
+
+// Also try when window loads
+window.addEventListener('load', function() {
+    if (!chatbotInitialized) {
+        setTimeout(initializeChatbot, 2000);
+    }
+});
+</script>
+""", height=0)
 
 # Aggressive caching for network optimization
 @st.cache_data(ttl=600)  # Cache for 10 minutes
@@ -343,7 +477,7 @@ def assess_usage_with_ai(water_gallons, electricity_kwh, gas_cubic_m, user=None)
         'efficiency_score': round(efficiency_score, 1),
         'carbon_footprint': carbon_footprint,
         'ai_recommendations': ai_recommendations,
-        'points': round(ai_points, 1),
+        'ai_points': round(ai_points, 1),  # Fixed: changed from 'points' to 'ai_points'
         'ai_predictions': ai_predictions,
         'validation_warnings': validation_warnings,
         'data_points': len(data_for_analysis),
@@ -866,6 +1000,16 @@ try:
             st.sidebar.warning(f"⏰ Next entry available in: **{time_until_reset}**")
         else:
             st.sidebar.success(usage_message)
+    
+    # Help Contact Information
+    st.sidebar.markdown("### 📧 Need Help?")
+    st.sidebar.info("""
+    **Contact Support:**
+    
+    📧 **ecoauditforu@gmail.com**
+    
+    For technical support, feature requests, or general assistance with the EcoAudit platform.
+    """)
     
     page = st.sidebar.radio("Go to", ["User Profile", "Utility Usage Tracker", "Materials Recycling Guide", "AI Insights Dashboard", "My History", "Global Monitor"], key="main_nav_radio")
 except Exception:
